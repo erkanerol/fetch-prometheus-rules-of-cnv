@@ -25,20 +25,47 @@ def print_rules_to_file(prometheus_rules):
         for group in groups:
             f.write(f'## Group: {group["name"]} \n\n')
 
+            alerting_rules = []
+            records = []
+
             for rule in group["rules"]:
                 if "alert" in rule:
-                    print_rule = copy.deepcopy(rule)
-                    del print_rule["alert"]
-                    rule_as_json = json.dumps(print_rule ,indent = 4)
-                    f.write(f'#### - Rule: {rule["alert"]}\n')
-                    f.write(f'```\n{rule_as_json}\n```\n')
-
+                    alerting_rules.append(rule)
                 if "record" in rule:
-                    print_rule = copy.deepcopy(rule)
-                    del print_rule["record"]
-                    rule_as_json = json.dumps(print_rule ,indent = 4)
-                    f.write(f'#### - Record: {rule["record"]}\n')
-                    f.write(f'```\n{rule_as_json}\n```\n')
+                    records.append(rule)
+
+            if len(records) > 0:
+                for record in records:
+                    f.write(f'### Record: `{record["record"]}`\n')
+                    f.write(f'```\n{record["expr"]}\n```\n')
+                    f.write("<br><br>\n")
+                    f.write("\n\n---\n\n")
+
+            if len(alerting_rules) > 0:
+                for alerting_rule in alerting_rules:
+                    f.write(f'### Alerting Rule: `{alerting_rule["alert"]}`\n\n')
+
+                    if "annotations" in alerting_rule:
+                        if "summary" in alerting_rule["annotations"]:
+                            f.write(f'***Summary:***\n\n{alerting_rule["annotations"]["summary"]}\n\n')
+                        if "description" in alerting_rule["annotations"]:
+                            f.write(f'***Description:***\n\n{alerting_rule["annotations"]["description"]}\n\n')
+
+                    f.write(f'***Expression:***\n```\n{alerting_rule["expr"]}\n```\n')
+
+                    if "for" in alerting_rule:
+                        f.write(f'***For:*** ```{alerting_rule["for"]}```\n\n')
+
+                    if "labels" in alerting_rule:
+                        f.write(f'***Labels:***\n\n')
+                        for label in alerting_rule["labels"]:
+                            f.write(f'- {label}={alerting_rule["labels"][label]}\n')
+                        f.write(f'\n')
+
+                        if "severity" in alerting_rule["labels"]:
+                           f.write(f'***Severity:*** ```{alerting_rule["labels"]["severity"]}```\n')
+
+                    f.write("\n\n---\n\n")
 
     f.close()
 
